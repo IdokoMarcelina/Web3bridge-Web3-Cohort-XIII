@@ -45,7 +45,7 @@ contract Web3BridgeGarageAccess {
      
         if (employee.status == Status.TERMINATED) {
             return false;
-        }
+        };
         
     
         if (employee.role == EmployeeRole.MediaTeam || 
