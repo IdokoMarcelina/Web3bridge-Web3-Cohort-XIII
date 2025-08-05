@@ -1,0 +1,3 @@
+Deployed Addresses
+
+Erc20Module#ERC20 - 0x7202AC220ef94712B20038C0ee4A5fE4074bc714
