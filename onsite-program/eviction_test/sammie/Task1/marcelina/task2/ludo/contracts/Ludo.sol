@@ -35,7 +35,6 @@ contract Ludo {
     uint256 private constant SAFE_ZONE_BASE = 200;
     uint256 private constant WINNING_POSITION = 256;
     
-    // Events
     event PlayerRegistered(address indexed player, string name, PlayerColor color);
     event GameStarted(uint256 totalPlayers);
     event DiceRolled(address indexed player, uint256 diceValue);
@@ -78,7 +77,6 @@ contract Ludo {
         newPlayer.isRegistered = true;
         newPlayer.tokensInHome = 4;
         
-        // Initialize all tokens at home (100 + color index)
         for (uint256 i = 0; i < 4; i++) {
             newPlayer.tokenPositions[i] = HOME_BASE + uint256(_color);
         }
@@ -108,11 +106,10 @@ contract Ludo {
     }
     
     function rollDice() external onlyRegisteredPlayer gameActive currentPlayer returns (uint256) {
-        uint256 diceValue = _generateRandomNumber() + 1; // 1-6
+        uint256 diceValue = _generateRandomNumber() + 1; 
         
         emit DiceRolled(msg.sender, diceValue);
         
-        // Check if player can move any token
         if (!canPlayerMove(msg.sender, diceValue)) {
             nextTurn();
         }
@@ -130,29 +127,26 @@ contract Ludo {
         
         uint256 newPosition = calculateNewPosition(msg.sender, tokenIndex, diceValue);
         
-        // Check for captures
         checkForCapture(newPosition, msg.sender);
         
         uint256 oldPosition = player.tokenPositions[tokenIndex];
         player.tokenPositions[tokenIndex] = newPosition;
         
-        // Update tokens in home count
         if (oldPosition >= HOME_BASE && oldPosition < SAFE_ZONE_BASE && newPosition < HOME_BASE) {
             player.tokensInHome--;
         }
         
         emit TokenMoved(msg.sender, tokenIndex, oldPosition, newPosition);
         
-        // Check win condition
         if (hasPlayerWon(msg.sender)) {
             gameState.winner = msg.sender;
             gameState.isActive = false;
-            player.score += 1000; // Winning bonus
+            player.score += 1000; 
             emit PlayerWon(msg.sender, player.color);
             return;
         }
         
-        // Give another turn if rolled 6 or captured a token
+    
         if (diceValue != 6) {
             nextTurn();
         }
@@ -173,19 +167,19 @@ contract Ludo {
         Player storage player = players[playerAddr];
         uint256 currentPosition = player.tokenPositions[tokenIndex];
         
-        // Token at home can only move with 6
+        
         if (currentPosition >= HOME_BASE && currentPosition < SAFE_ZONE_BASE) {
             return diceValue == 6;
         }
         
-        // Token already won
+        
         if (currentPosition == WINNING_POSITION) {
             return false;
         }
         
         uint256 newPosition = calculateNewPosition(playerAddr, tokenIndex, diceValue);
         
-        // Check if move would exceed winning position
+        
         return newPosition <= WINNING_POSITION;
     }
     
@@ -193,25 +187,22 @@ contract Ludo {
         Player storage player = players[playerAddr];
         uint256 currentPosition = player.tokenPositions[tokenIndex];
         
-        // Token at home
+       
         if (currentPosition >= HOME_BASE && currentPosition < SAFE_ZONE_BASE) {
             if (diceValue == 6) {
                 return getStartPosition(player.color);
             }
-            return currentPosition; // Can't move
+            return currentPosition; 
         }
         
-        // Token on main board
         if (currentPosition < BOARD_SIZE) {
             uint256 newPos = currentPosition + diceValue;
             
-            // Check if entering safe zone
             if (shouldEnterSafeZone(playerAddr, currentPosition, diceValue)) {
                 uint256 stepsIntoSafeZone = newPos - getHomeEntryPosition(player.color);
                 return SAFE_ZONE_BASE + uint256(player.color) * 10 + stepsIntoSafeZone - 1;
             }
             
-            // Wrap around board
             if (newPos >= BOARD_SIZE) {
                 newPos = newPos - BOARD_SIZE;
             }
@@ -219,11 +210,10 @@ contract Ludo {
             return newPos;
         }
         
-        // Token in safe zone
         if (currentPosition >= SAFE_ZONE_BASE && currentPosition < WINNING_POSITION) {
             uint256 newPos = currentPosition + diceValue;
             if (newPos > SAFE_ZONE_BASE + uint256(player.color) * 10 + 5) {
-                return WINNING_POSITION; // Exact or over means won
+                return WINNING_POSITION; 
             }
             return newPos;
         }
@@ -256,7 +246,6 @@ contract Ludo {
     }
     
     function checkForCapture(uint256 position, address currentPlayer) internal {
-        // Check if any opponent token is at this position
         for (uint256 i = 0; i < playerAddresses.length; i++) {
             address opponent = playerAddresses[i];
             if (opponent == currentPlayer) continue;
@@ -264,11 +253,9 @@ contract Ludo {
             Player storage opponentPlayer = players[opponent];
             for (uint256 j = 0; j < 4; j++) {
                 if (opponentPlayer.tokenPositions[j] == position && position < BOARD_SIZE) {
-                    // Capture the token (send back to home)
                     opponentPlayer.tokenPositions[j] = HOME_BASE + uint256(opponentPlayer.color);
                     opponentPlayer.tokensInHome++;
                     
-                    // Award points for capture
                     players[currentPlayer].score += 50;
                     
                     emit TokenCaptured(currentPlayer, opponent, position);
@@ -302,7 +289,6 @@ contract Ludo {
         ))) % 6;
     }
     
-    // View functions
     function getPlayer(address playerAddr) external view returns (
         string memory name,
         PlayerColor color,
@@ -361,7 +347,6 @@ contract Ludo {
             }
         }
         
-        // Resize array to actual count
         PlayerColor[] memory result = new PlayerColor[](count);
         for (uint256 i = 0; i < count; i++) {
             result[i] = available[i];
